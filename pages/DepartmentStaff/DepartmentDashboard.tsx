@@ -33,7 +33,11 @@ interface RecentRequest {
 	priority: "low" | "medium" | "high" | "urgent";
 }
 
-const DepartmentDashboard: React.FC = () => {
+interface DepartmentDashboardProps {
+	onNavigate: (page: "dashboard" | "history" | "summary") => void;
+}
+
+const DepartmentDashboard: React.FC<DepartmentDashboardProps> = ({ onNavigate }) => {
 	const [summary] = useState<RequestSummary>({
 		total: 15,
 		pending: 3,
@@ -131,7 +135,10 @@ const DepartmentDashboard: React.FC = () => {
 						Department Dashboard
 					</h1>
 				</div>
-				<Button className="bg-blue-600 hover:bg-blue-700">
+				<Button 
+					className="bg-blue-600 hover:bg-blue-700"
+					onClick={() => onNavigate("summary")}
+				>
 					<Plus className="h-4 w-4 mr-2" />
 					New Request
 				</Button>
@@ -201,6 +208,7 @@ const DepartmentDashboard: React.FC = () => {
 						<Button
 							variant="outline"
 							className="h-20 flex flex-col items-center justify-center space-y-2 bg-transparent"
+							onClick={() => onNavigate("summary")}
 						>
 							<Plus className="h-6 w-6" />
 							<span>Submit New Request</span>
@@ -208,6 +216,7 @@ const DepartmentDashboard: React.FC = () => {
 						<Button
 							variant="outline"
 							className="h-20 flex flex-col items-center justify-center space-y-2 bg-transparent"
+							onClick={() => onNavigate("history")}
 						>
 							<Clock className="h-6 w-6" />
 							<span>View Pending Requests</span>
@@ -215,6 +224,7 @@ const DepartmentDashboard: React.FC = () => {
 						<Button
 							variant="outline"
 							className="h-20 flex flex-col items-center justify-center space-y-2 bg-transparent"
+							onClick={() => onNavigate("history")}
 						>
 							<TrendingUp className="h-6 w-6" />
 							<span>Track Request History</span>

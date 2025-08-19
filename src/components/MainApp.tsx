@@ -49,7 +49,7 @@ type WarehouseStaffPage =
 export default function MainApp() {
   const { user, signOut } = useUserContext();
   const role = user?.user?.role;
-  const [currentRole] = useState<UserRole>(role ?? "admin");
+  const [currentRole] = useState<UserRole>("manager");
 
   const [adminActivePage, setAdminActivePage] =
     useState<AdminPage>("dashboard");
@@ -272,7 +272,7 @@ export default function MainApp() {
           {/* Main Content */}
           <div className="flex-1">
             {departmentStaffActivePage === "dashboard" && (
-              <DepartmentDashboard />
+              <DepartmentDashboard onNavigate={setDepartmentStaffActivePage} />
             )}
             {departmentStaffActivePage === "history" && <RequestHistoryPage />}
             {departmentStaffActivePage === "summary" && <RequestSummaryPage />}

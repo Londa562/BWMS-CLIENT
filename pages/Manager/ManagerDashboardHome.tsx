@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	Card,
 	CardContent,
@@ -14,7 +15,7 @@ import {
 	AlertTriangle,
 } from "lucide-react";
 
-const pendingRequests = [
+const initialPendingRequests = [
 	{
 		id: "REQ001",
 		department: "IT Department",
@@ -41,7 +42,7 @@ const pendingRequests = [
 	},
 ];
 
-const recentActivities = [
+const initialActivities = [
 	{
 		action: "Approved request REQ005",
 		user: "Manager",
@@ -60,6 +61,49 @@ const recentActivities = [
 ];
 
 export default function ManagerDashboardHome() {
+	const [pendingRequests, setPendingRequests] = useState(initialPendingRequests);
+	const [recentActivities, setRecentActivities] = useState(initialActivities);
+	const [approvedToday, setApprovedToday] = useState(12);
+
+	const approveRequest = (requestId: string) => {
+		const requestToApprove = pendingRequests.find(req => req.id === requestId);
+		if (requestToApprove) {
+			// Remove from pending requests
+			setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+			
+			// Increase approved today count
+			setApprovedToday(prev => prev + 1);
+			
+			// Add to recent activities at the beginning
+			setRecentActivities(prev => [
+				{
+					action: `Approved Request for ${requestToApprove.item}`,
+					user: "Manager",
+					timestamp: "Just now"
+				},
+				...prev
+			]);
+		}
+	};
+
+	const rejectRequest = (requestId: string) => {
+		const requestToReject = pendingRequests.find(req => req.id === requestId);
+		if (requestToReject) {
+			// Remove from pending requests
+			setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+			
+			// Add to recent activities at the beginning
+			setRecentActivities(prev => [
+				{
+					action: `Rejected Request for ${requestToReject.item}`,
+					user: "Manager", 
+					timestamp: "Just now"
+				},
+				...prev
+			]);
+		}
+	};
+
 	return (
 		<div className="p-6 space-y-6">
 			<div className="flex justify-between items-center">
@@ -96,7 +140,7 @@ export default function ManagerDashboardHome() {
 						<CheckCircle className="h-4 w-4 text-green-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold text-green-600">12</div>
+						<div className="text-2xl font-bold text-green-600">{approvedToday}</div>
 					</CardContent>
 				</Card>
 
@@ -162,6 +206,7 @@ export default function ManagerDashboardHome() {
 												size="sm"
 												variant="outline"
 												className="text-green-600 hover:text-green-700 bg-transparent"
+												onClick={() => approveRequest(request.id)}
 											>
 												<CheckCircle className="h-4 w-4" />
 											</Button>
@@ -169,6 +214,7 @@ export default function ManagerDashboardHome() {
 												size="sm"
 												variant="outline"
 												className="text-red-600 hover:text-red-700 bg-transparent"
+												onClick={() => rejectRequest(request.id)}
 											>
 												<XCircle className="h-4 w-4" />
 											</Button>
@@ -187,7 +233,7 @@ export default function ManagerDashboardHome() {
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-4">
-							{recentActivities.map((activity, index) => (
+							{recentActivities.slice(0, 3).map((activity, index) => (
 								<div
 									key={index}
 									className="flex items-center space-x-3 p-3 border rounded-lg"
