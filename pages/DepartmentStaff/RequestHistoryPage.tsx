@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	Card,
 	CardContent,
@@ -11,6 +10,7 @@ import {
 import { Button } from "../../src/components/ui/button";
 import { Input } from "../../src/components/ui/input";
 import { Badge } from "../../src/components/ui/badge";
+import { getDepartmentRequests } from "../../src/api/requests";
 import {
 	Dialog,
 	DialogContent,
@@ -34,6 +34,17 @@ import {
 	Download,
 } from "lucide-react";
 
+interface BackendStockRequest {
+	id: number;
+	item: number;
+	quantity: number;
+	status: "PENDING" | "APPROVED" | "REJECTED" | "FULFILLED";
+	requester: number;
+	department: number;
+	tx_hash: string;
+	created_at: string;
+}
+
 interface StockRequest {
 	id: string;
 	requestId: string;
@@ -55,81 +66,9 @@ interface StockRequest {
 }
 
 const RequestHistoryPage: React.FC = () => {
-	const [requests, setRequests] = useState<StockRequest[]>([
-		{
-			id: "1",
-			requestId: "REQ-2024-001",
-			itemName: "Office Supplies - A4 Paper",
-			quantity: 50,
-			unit: "reams",
-			requestDate: new Date("2024-03-15"),
-			priority: "medium",
-			status: "fulfilled",
-			reason: "Monthly office supplies replenishment",
-			estimatedValue: 125.0,
-			approvedBy: "Manager Smith",
-			approvedDate: new Date("2024-03-16"),
-			fulfilledDate: new Date("2024-03-18"),
-			notes: "Delivered to department storage room",
-		},
-		{
-			id: "2",
-			requestId: "REQ-2024-002",
-			itemName: "Computer Equipment - Mouse",
-			quantity: 10,
-			unit: "units",
-			requestDate: new Date("2024-03-14"),
-			priority: "low",
-			status: "approved",
-			reason: "Replacement for faulty mice",
-			estimatedValue: 200.0,
-			approvedBy: "Manager Johnson",
-			approvedDate: new Date("2024-03-15"),
-		},
-		{
-			id: "3",
-			requestId: "REQ-2024-003",
-			itemName: "Stationery - Pens",
-			quantity: 100,
-			unit: "pieces",
-			requestDate: new Date("2024-03-13"),
-			priority: "medium",
-			status: "fulfilled",
-			reason: "Staff stationery needs",
-			estimatedValue: 50.0,
-			approvedBy: "Manager Smith",
-			approvedDate: new Date("2024-03-14"),
-			fulfilledDate: new Date("2024-03-16"),
-		},
-		{
-			id: "4",
-			requestId: "REQ-2024-004",
-			itemName: "Printer Cartridges",
-			quantity: 5,
-			unit: "units",
-			requestDate: new Date("2024-03-12"),
-			priority: "high",
-			status: "rejected",
-			reason: "Printer maintenance required",
-			estimatedValue: 300.0,
-			rejectedBy: "Manager Johnson",
-			rejectedDate: new Date("2024-03-13"),
-			rejectionReason: "Budget constraints for this quarter",
-		},
-		{
-			id: "5",
-			requestId: "REQ-2024-005",
-			itemName: "Cleaning Supplies",
-			quantity: 20,
-			unit: "units",
-			requestDate: new Date("2024-03-11"),
-			priority: "urgent",
-			status: "pending",
-			reason: "Health and safety compliance",
-			estimatedValue: 150.0,
-		},
-	]);
-
+	const [requests, setRequests] = useState<StockRequest[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedStatus, setSelectedStatus] = useState<string>("all");
 	const [selectedPriority, setSelectedPriority] = useState<string>("all");
@@ -137,6 +76,127 @@ const RequestHistoryPage: React.FC = () => {
 		null
 	);
 	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
+	// Transform backend data to frontend format
+	const transformBackendData = (
+		backendRequests: BackendStockRequest[]
+	): StockRequest[] => {
+		return backendRequests.map((req, index) => ({
+			id: req.id.toString(),
+			requestId: `REQ-${new Date(req.created_at).getFullYear()}-${req.id
+				.toString()
+				.padStart(3, "0")}`,
+			itemName: `Item ${req.item}`, // You might want to fetch actual item names
+			quantity: req.quantity,
+			unit: "units", // Default unit since not provided by backend
+			requestDate: new Date(req.created_at),
+			priority: "medium", // Default priority since not provided by backend
+			status: req.status.toLowerCase() as
+				| "pending"
+				| "approved"
+				| "rejected"
+				| "fulfilled",
+			reason: "Department request", // Default reason since not provided by backend
+			estimatedValue: req.quantity * 10, // Estimated value calculation
+			tx_hash: req.tx_hash,
+		}));
+	};
+
+	// Fetch requests from backend
+	const fetchRequests = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+			const backendRequests = await getDepartmentRequests();
+			const transformedRequests = transformBackendData(backendRequests);
+			setRequests(transformedRequests);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to fetch requests");
+			console.error("Error fetching requests:", err);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Fetch data on component mount
+	useEffect(() => {
+		fetchRequests();
+	}, []);
+
+	// const [requests, setRequests] = useState<StockRequest[]>([
+	// 	{
+	// 		id: "1",
+	// 		requestId: "REQ-2024-001",
+	// 		itemName: "Office Supplies - A4 Paper",
+	// 		quantity: 50,
+	// 		unit: "reams",
+	// 		requestDate: new Date("2024-03-15"),
+	// 		priority: "medium",
+	// 		status: "fulfilled",
+	// 		reason: "Monthly office supplies replenishment",
+	// 		estimatedValue: 125.0,
+	// 		approvedBy: "Manager Smith",
+	// 		approvedDate: new Date("2024-03-16"),
+	// 		fulfilledDate: new Date("2024-03-18"),
+	// 		notes: "Delivered to department storage room",
+	// 	},
+	// 	{
+	// 		id: "2",
+	// 		requestId: "REQ-2024-002",
+	// 		itemName: "Computer Equipment - Mouse",
+	// 		quantity: 10,
+	// 		unit: "units",
+	// 		requestDate: new Date("2024-03-14"),
+	// 		priority: "low",
+	// 		status: "approved",
+	// 		reason: "Replacement for faulty mice",
+	// 		estimatedValue: 200.0,
+	// 		approvedBy: "Manager Johnson",
+	// 		approvedDate: new Date("2024-03-15"),
+	// 	},
+	// 	{
+	// 		id: "3",
+	// 		requestId: "REQ-2024-003",
+	// 		itemName: "Stationery - Pens",
+	// 		quantity: 100,
+	// 		unit: "pieces",
+	// 		requestDate: new Date("2024-03-13"),
+	// 		priority: "medium",
+	// 		status: "fulfilled",
+	// 		reason: "Staff stationery needs",
+	// 		estimatedValue: 50.0,
+	// 		approvedBy: "Manager Smith",
+	// 		approvedDate: new Date("2024-03-14"),
+	// 		fulfilledDate: new Date("2024-03-16"),
+	// 	},
+	// 	{
+	// 		id: "4",
+	// 		requestId: "REQ-2024-004",
+	// 		itemName: "Printer Cartridges",
+	// 		quantity: 5,
+	// 		unit: "units",
+	// 		requestDate: new Date("2024-03-12"),
+	// 		priority: "high",
+	// 		status: "rejected",
+	// 		reason: "Printer maintenance required",
+	// 		estimatedValue: 300.0,
+	// 		rejectedBy: "Manager Johnson",
+	// 		rejectedDate: new Date("2024-03-13"),
+	// 		rejectionReason: "Budget constraints for this quarter",
+	// 	},
+	// 	{
+	// 		id: "5",
+	// 		requestId: "REQ-2024-005",
+	// 		itemName: "Cleaning Supplies",
+	// 		quantity: 20,
+	// 		unit: "units",
+	// 		requestDate: new Date("2024-03-11"),
+	// 		priority: "urgent",
+	// 		status: "pending",
+	// 		reason: "Health and safety compliance",
+	// 		estimatedValue: 150.0,
+	// 	},
+	// ]);
 
 	const filteredRequests = requests.filter((request) => {
 		const matchesSearch =

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { submitDepartmentRequest } from "../../src/api/requests";
+
 import {
 	Select,
 	SelectContent,
@@ -42,25 +44,27 @@ const RequestSummaryPage: React.FC = () => {
 
 	const handleSubmitRequest = async () => {
 		setIsSubmitting(true);
+
 		try {
-			// Generate request ID
-			const requestId = `REQ-${new Date().getFullYear()}-${String(
-				Date.now()
-			).slice(-6)}`;
+			// const requestId = `REQ-${new Date().getFullYear()}-${String(
+			// 	Date.now()
+			// ).slice(-6)}`;
 
 			const requestData = {
-				...newRequest,
-				requestId,
-				requestDate: new Date(),
-				status: "pending",
-				requestedBy: "Department Staff", // This would come from auth context
-				department: "Current Department", // This would come from auth context
+				item_id: newRequest.itemName,
+				quantity: newRequest.quantity,
+				unit: newRequest.unit,
+				priority: newRequest.priority,
+				reason: newRequest.reason,
+				justification: newRequest.justification,
+				estimated_value: newRequest.estimatedValue,
+				urgency_date: newRequest.urgencyDate || null,
 			};
 
-			console.log("[v0] Submitting new request:", requestData);
+			console.log("[v1] Submitting new request:", requestData);
 
-			// API call to submit request
-			await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+			const result = await submitDepartmentRequest(requestData);
+			console.log("[v1] Request submitted successfully:", result);
 
 			// Reset form
 			setNewRequest({
@@ -73,13 +77,50 @@ const RequestSummaryPage: React.FC = () => {
 				estimatedValue: 0,
 				urgencyDate: "",
 			});
-
-			console.log("[v0] Request submitted successfully:", requestId);
 		} catch (error) {
-			console.error("[v0] Error submitting request:", error);
+			console.error("[v1] Error submitting request:", error);
 		} finally {
 			setIsSubmitting(false);
 		}
+
+		// try {
+		// 	// Generate request ID
+		// 	const requestId = `REQ-${new Date().getFullYear()}-${String(
+		// 		Date.now()
+		// 	).slice(-6)}`;
+
+		// 	const requestData = {
+		// 		...newRequest,
+		// 		requestId,
+		// 		requestDate: new Date(),
+		// 		status: "pending",
+		// 		requestedBy: "Department Staff", // This would come from auth context
+		// 		department: "Current Department", // This would come from auth context
+		// 	};
+
+		// 	console.log("[v0] Submitting new request:", requestData);
+
+		// 	// API call to submit request
+		// 	await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+
+		// 	// Reset form
+		// 	setNewRequest({
+		// 		itemName: "",
+		// 		quantity: 0,
+		// 		unit: "",
+		// 		priority: "medium",
+		// 		reason: "",
+		// 		justification: "",
+		// 		estimatedValue: 0,
+		// 		urgencyDate: "",
+		// 	});
+
+		// 	console.log("[v0] Request submitted successfully:", requestId);
+		// } catch (error) {
+		// 	console.error("[v0] Error submitting request:", error);
+		// } finally {
+		// 	setIsSubmitting(false);
+		// }
 	};
 
 	const isFormValid = () => {
